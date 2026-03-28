@@ -1,0 +1,46 @@
+---
+services:
+  redis-replica:
+    extends:
+      file: ./docker-compose.common.yaml
+      service: redis-base
+    container_name: redis-replica
+    extra_hosts:
+      - "redis-master:${MASTER_IP}"
+      - "redis-replica:${REPLICA_IP}"
+      - "sentinel-first:${SENTINEL_FIRST_IP}"
+      - "sentinel-second:${SENTINEL_SECOND_IP}"
+      - "sentinel-third:${SENTINEL_THIRD_IP}"
+    volumes:
+      - ./data/replica:/data
+    command:
+      - redis-server
+      - --bind
+      - 0.0.0.0
+      - --port
+      - "6379"
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --protected-mode
+      - "no"
+      - --replicaof
+      - ${MASTER_IP}
+      - ${MASTER_PORT}
+    ports:
+      - "${REPLICA_PORT:-20002}:6379"
+
+  sentinel-second:
+    extends:
+      file: ./docker-compose.common.yaml
+      service: sentinel-base
+    container_name: sentinel-second
+    extra_hosts:
+      - "redis-master:${MASTER_IP}"
+      - "redis-replica:${REPLICA_IP}"
+      - "sentinel-first:${SENTINEL_FIRST_IP}"
+      - "sentinel-second:${SENTINEL_SECOND_IP}"
+      - "sentinel-third:${SENTINEL_THIRD_IP}"
+    ports:
+      - "${SENTINEL_SECOND_PORT:-30002}:26379"
